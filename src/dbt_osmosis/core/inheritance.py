@@ -63,7 +63,12 @@ def _get_node_yaml(context: t.Any, member: ResultNode) -> MappingProxyType[str, 
         path = project_dir.joinpath(member.original_file_path)
         sources = t.cast(
             list[dict[str, t.Any]],
-            _read_yaml(context.yaml_handler, context.yaml_handler_lock, path).get("sources", []),
+            _read_yaml(
+                context.yaml_handler,
+                context.yaml_handler_lock,
+                path,
+                context.schema_engine,
+            ).get("sources", []),
         )
         source = _find_first(sources, lambda s: s["name"] == member.source_name, {})
         tables = source.get("tables", [])
@@ -78,7 +83,12 @@ def _get_node_yaml(context: t.Any, member: ResultNode) -> MappingProxyType[str, 
         section = f"{member.resource_type}s"
         models = t.cast(
             list[dict[str, t.Any]],
-            _read_yaml(context.yaml_handler, context.yaml_handler_lock, path).get(section, []),
+            _read_yaml(
+                context.yaml_handler,
+                context.yaml_handler_lock,
+                path,
+                context.schema_engine,
+            ).get(section, []),
         )
         maybe_doc = _find_first(models, lambda model: model["name"] == member.name)
         if maybe_doc is not None:

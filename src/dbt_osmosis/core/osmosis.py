@@ -115,6 +115,7 @@ def commit_yamls(context: YamlRefactorContext) -> None:
     _commit_yamls_impl(
         yaml_handler=context.yaml_handler,
         yaml_handler_lock=context.yaml_handler_lock,
+        engine=context.schema_engine,
         dry_run=context.settings.dry_run,
         mutation_tracker=context.register_mutations,
     )

@@ -63,6 +63,7 @@ def test_commit_yamls_no_write(yaml_context: YamlRefactorContext):
     commit_yamls(
         yaml_handler=yaml_context.yaml_handler,
         yaml_handler_lock=yaml_context.yaml_handler_lock,
+        engine=yaml_context.schema_engine,
         dry_run=yaml_context.settings.dry_run,
         mutation_tracker=yaml_context.register_mutations,
     )

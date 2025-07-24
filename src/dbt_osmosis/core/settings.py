@@ -63,6 +63,9 @@ class YamlRefactorSettings:
     create_catalog_if_not_exists: bool = False
     """Generate the catalog.json for the project if it doesn't exist and use it for introspective queries."""
 
+    yaml_schema_version: str = "legacy"
+    """YAML schema version to use when reading/writing docs."""
+
 
 @dataclass
 class YamlRefactorContext:
@@ -91,6 +94,8 @@ class YamlRefactorContext:
         "Not documented",
         "Undefined",
     )
+
+    schema_engine: t.Any = field(init=False)
 
     _mutation_count: int = field(default=0, init=False)
     _catalog: CatalogResults | None = field(default=None, init=False)
@@ -177,6 +182,9 @@ class YamlRefactorContext:
         self.yaml_handler = create_yaml_instance()
         for setting, val in self.yaml_settings.items():
             setattr(self.yaml_handler, setting, val)
+        from dbt_osmosis.core.schema.formats import get_engine
+
+        self.schema_engine = get_engine(self.settings.yaml_schema_version)
         self.pool._max_workers = self.project.runtime_cfg.threads
         logger.info(
             ":notebook: Osmosis ThreadPoolExecutor max_workers synced with dbt => %s",

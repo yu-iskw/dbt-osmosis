@@ -54,6 +54,7 @@ def cli() -> None:
 def test_llm_connection(llm_client=None) -> None:
     """Test the connection to the LLM client."""
     import os
+
     from dbt_osmosis.core.llm import get_llm_client
 
     llm_client = os.getenv("LLM_PROVIDER")
@@ -191,6 +192,12 @@ def yaml_opts(func: t.Callable[P, T]) -> t.Callable[P, T]:
         "--disable-introspection",
         is_flag=True,
         help="Allows running the program without a database connection, it is recommended to use the --catalog-path option if using this.",
+    )
+    @click.option(
+        "--yaml-schema-version",
+        type=click.Choice(["legacy", "1.10", "auto"], case_sensitive=False),
+        default="legacy",
+        help="YAML schema version to use when reading and writing docs.",
     )
     @functools.wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:

@@ -6,6 +6,7 @@ from pathlib import Path
 import ruamel.yaml
 
 import dbt_osmosis.core.logger as logger
+from dbt_osmosis.core.schema.formats import SchemaEngine
 from dbt_osmosis.core.schema.reader import _YAML_BUFFER_CACHE
 
 __all__ = [
@@ -19,6 +20,8 @@ def _write_yaml(
     yaml_handler_lock: threading.Lock,
     path: Path,
     data: dict[str, t.Any],
+    *,
+    engine: SchemaEngine | None = None,
     dry_run: bool = False,
     mutation_tracker: t.Callable[[int], None] | None = None,
 ) -> None:
@@ -28,7 +31,8 @@ def _write_yaml(
         with yaml_handler_lock:
             path.parent.mkdir(parents=True, exist_ok=True)
             original = path.read_bytes() if path.is_file() else b""
-            yaml_handler.dump(data, staging := io.BytesIO())
+            dump_data = data if engine is None else engine.dump(data)
+            yaml_handler.dump(dump_data, staging := io.BytesIO())
             modified = staging.getvalue()
             if modified != original:
                 logger.info(":writing_hand: Writing changes to => %s", path)
@@ -46,6 +50,8 @@ def _write_yaml(
 def commit_yamls(
     yaml_handler: ruamel.yaml.YAML,
     yaml_handler_lock: threading.Lock,
+    *,
+    engine: SchemaEngine | None = None,
     dry_run: bool = False,
     mutation_tracker: t.Callable[[int], None] | None = None,
 ) -> None:
@@ -55,7 +61,10 @@ def commit_yamls(
         with yaml_handler_lock:
             for path in list(_YAML_BUFFER_CACHE.keys()):
                 original = path.read_bytes() if path.is_file() else b""
-                yaml_handler.dump(_YAML_BUFFER_CACHE[path], staging := io.BytesIO())
+                dump_data = _YAML_BUFFER_CACHE[path]
+                if engine is not None:
+                    dump_data = engine.dump(dump_data)
+                yaml_handler.dump(dump_data, staging := io.BytesIO())
                 modified = staging.getvalue()
                 if modified != original:
                     logger.info(":writing_hand: Writing => %s", path)
