@@ -95,7 +95,12 @@ def _create_operations_for_node(
     else:
         from dbt_osmosis.core.schema.reader import _read_yaml
 
-        existing = _read_yaml(context.yaml_handler, context.yaml_handler_lock, loc.current)
+        existing = _read_yaml(
+            context.yaml_handler,
+            context.yaml_handler_lock,
+            loc.current,
+            context.schema_engine,
+        )
         injectable: dict[str, t.Any] = {"version": 2}
         injectable.setdefault("models", [])
         injectable.setdefault("sources", [])
@@ -275,7 +280,10 @@ def apply_restructure_plan(
         output_doc: dict[str, t.Any] = {"version": 2}
         if op.file_path.exists():
             existing_data = _read_yaml(
-                context.yaml_handler, context.yaml_handler_lock, op.file_path
+                context.yaml_handler,
+                context.yaml_handler_lock,
+                op.file_path,
+                context.schema_engine,
             )
             output_doc.update(existing_data)
 
@@ -292,13 +300,19 @@ def apply_restructure_plan(
             context.yaml_handler_lock,
             op.file_path,
             output_doc,
-            context.settings.dry_run,
-            context.register_mutations,
+            engine=context.schema_engine,
+            dry_run=context.settings.dry_run,
+            mutation_tracker=context.register_mutations,
         )
 
         for path, nodes in op.superseded_paths.items():
             if path.is_file():
-                existing_data = _read_yaml(context.yaml_handler, context.yaml_handler_lock, path)
+                existing_data = _read_yaml(
+                    context.yaml_handler,
+                    context.yaml_handler_lock,
+                    path,
+                    context.schema_engine,
+                )
 
                 if "models" in existing_data:
                     _remove_models(existing_data, nodes)
@@ -323,8 +337,9 @@ def apply_restructure_plan(
                         context.yaml_handler_lock,
                         path,
                         existing_data,
-                        context.settings.dry_run,
-                        context.register_mutations,
+                        engine=context.schema_engine,
+                        dry_run=context.settings.dry_run,
+                        mutation_tracker=context.register_mutations,
                     )
                     logger.info(
                         ":arrow_forward: Migrated doc from => %s to => %s", path, op.file_path
@@ -338,7 +353,8 @@ def apply_restructure_plan(
     commit_yamls(
         context.yaml_handler,
         context.yaml_handler_lock,
-        context.settings.dry_run,
-        context.register_mutations,
+        engine=context.schema_engine,
+        dry_run=context.settings.dry_run,
+        mutation_tracker=context.register_mutations,
     )
     _reload_manifest(context.project)

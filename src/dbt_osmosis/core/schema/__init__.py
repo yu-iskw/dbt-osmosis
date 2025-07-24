@@ -1,3 +1,4 @@
+from dbt_osmosis.core.schema.formats import get_engine
 from dbt_osmosis.core.schema.parser import *  # noqa: F403
 from dbt_osmosis.core.schema.reader import *  # noqa: F403
 from dbt_osmosis.core.schema.writer import *  # noqa: F403
@@ -8,4 +9,5 @@ __all__ = [
     "_write_yaml",  # noqa: F405
     "commit_yamls",  # noqa: F405
     "_YAML_BUFFER_CACHE",  # noqa: F405
+    "get_engine",
 ]

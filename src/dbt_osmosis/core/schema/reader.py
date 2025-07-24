@@ -5,6 +5,7 @@ from pathlib import Path
 import ruamel.yaml
 
 import dbt_osmosis.core.logger as logger
+from .formats import SchemaEngine
 
 __all__ = [
     "_read_yaml",
@@ -16,14 +17,18 @@ _YAML_BUFFER_CACHE: dict[Path, t.Any] = {}
 
 
 def _read_yaml(
-    yaml_handler: ruamel.yaml.YAML, yaml_handler_lock: threading.Lock, path: Path
+    yaml_handler: ruamel.yaml.YAML,
+    yaml_handler_lock: threading.Lock,
+    path: Path,
+    engine: SchemaEngine | None = None,
 ) -> dict[str, t.Any]:
-    """Read a yaml file from disk. Adds an entry to the buffer cache so all operations on a path are consistent."""
+    """Read a yaml file from disk and normalize it via the schema engine."""
     with yaml_handler_lock:
         if path not in _YAML_BUFFER_CACHE:
             if not path.is_file():
                 logger.debug(":warning: Path => %s is not a file. Returning empty doc.", path)
                 return _YAML_BUFFER_CACHE.setdefault(path, {})
             logger.debug(":open_file_folder: Reading YAML doc => %s", path)
-            _YAML_BUFFER_CACHE[path] = t.cast(dict[str, t.Any], yaml_handler.load(path))
+            raw = t.cast(dict[str, t.Any], yaml_handler.load(path))
+            _YAML_BUFFER_CACHE[path] = raw if engine is None else engine.load(raw)
     return _YAML_BUFFER_CACHE[path]

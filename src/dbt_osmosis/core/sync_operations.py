@@ -127,7 +127,10 @@ def sync_node_to_yaml(
         current_path = get_target_yaml_path(context, node)
 
     doc: dict[str, t.Any] = _read_yaml(
-        context.yaml_handler, context.yaml_handler_lock, current_path
+        context.yaml_handler,
+        context.yaml_handler_lock,
+        current_path,
+        context.schema_engine,
     )
     if not doc:
         doc = {"version": 2}
@@ -247,6 +250,7 @@ def sync_node_to_yaml(
             context.yaml_handler_lock,
             current_path,
             doc,
-            context.settings.dry_run,
-            context.register_mutations,
+            engine=context.schema_engine,
+            dry_run=context.settings.dry_run,
+            mutation_tracker=context.register_mutations,
         )
